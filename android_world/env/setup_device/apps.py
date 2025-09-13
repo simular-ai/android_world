@@ -80,6 +80,26 @@ class AppSetup(abc.ABC):
     return adb_utils.extract_package_name(
         adb_utils.get_adb_activity(cls.app_name)
     )
+    @classmethod
+    
+  def reset(cls, env: interface.AsyncEnv) -> None:
+      """Launch, and close app safely."""
+      try:
+          # launch app once
+          adb_utils.launch_app(cls.app_name, env.controller)
+          time.sleep(2.0)
+          adb_utils.close_app(cls.app_name, env.controller)
+
+      except Exception as e:
+          logging.error(
+              "Failed to install and reset app %s (%s): %s",
+              cls.app_name,
+              cls.apk_names,
+              e,
+          )
+          # ensure app is closed before leaving
+          adb_utils.close_app(cls.app_name, env.controller)
+
 
   @classmethod
   def setup(cls, env: interface.AsyncEnv) -> None:

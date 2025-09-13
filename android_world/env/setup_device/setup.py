@@ -130,7 +130,18 @@ def setup_app(app: Type[apps.AppSetup], env: interface.AsyncEnv) -> None:
     )
   app_snapshot.save_snapshot(app.app_name, env.controller)
 
-
+def reset_app(app: Type[apps.AppSetup], env: interface.AsyncEnv) -> None:
+  """Resets a single app."""
+  try:
+    logging.info("Resetting app %s", app.app_name)
+    app.reset(env)
+  except ValueError as e:
+    logging.warning(
+        "Failed to automatically reset app %s: %s.\n\nYou will need to"
+        " manually reset the app.",
+        app.app_name,
+        e,
+    )
 def install_app_if_not_installed(app_name: str, env: interface.AsyncEnv):
   """Installs the apk of an app only if the apk is not installed."""
   path = apps.download_app_data(apk)
@@ -157,6 +168,12 @@ def maybe_install_app(
   if not apk_installed:
     raise RuntimeError(f"Failed to download and install APK for {app.app_name}")
 
+def reset_apps(env: interface.AsyncEnv):
+  """Resets the apps on the device."""
+  adb_utils.press_home_button(env.controller)
+  adb_utils.set_root_if_needed(env.controller)
+  for app in _APPS:
+    reset_app(app, env)
 
 def setup_apps(
     env: interface.AsyncEnv,
@@ -184,5 +201,10 @@ def setup_apps(
   if app_list is None:
     app_list = _APPS
   for app in app_list:
-    maybe_install_app(app, env)
-    setup_app(app, env)
+      try:
+          maybe_install_app(app, env)
+          setup_app(app, env)
+      except Exception:
+          logging.error(f"Failed to install and setup app {app.app_name}")
+          # You can also log the error if needed
+          continue

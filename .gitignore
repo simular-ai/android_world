@@ -11,7 +11,9 @@ _pycache__/
 build/
 dist/
 poetry.lock
-
+androidworld_setup/results/*
+androidworld_setup/.env
+*.env
 # Tests
 .pytest_cache/
 
